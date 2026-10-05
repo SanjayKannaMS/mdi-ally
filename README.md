@@ -1,6 +1,7 @@
 # MDI Ally
 
-MDI Ally is an app for people with Type 1 or Type 2 diabetes who take insulin by injection (multiple daily injections, or "MDI"). It does not necessarily require an insulin pump or a CGM. Every number it shows comes with the math behind it just so you can understand and check it.
+MDI Ally is an app for people with Type 1 or Type 2 diabetes who take insulin by injection (multiple daily injections, or "MDI"). About 99.7% of the diabetic population doesn't have an insulin pump, 99% without CGMs. This application was built for people like that, but also includes for those with pumps/CGMs too. We help the user to reduce their insulin dosage through healthy activities. Our AI can read photos of your manual logs and attribute what factors caused deviations with your input. Furthermore, we have a meal planner integrated with AI which is suggested based on the user's culinary preferences and their BG. Login options are available if you want to store your data.
+
 ---
 
 
