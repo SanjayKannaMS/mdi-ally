@@ -575,10 +575,12 @@ function RoutineRowCells({
   avgGlucose: number | null;
   onSaved: (log: RoutineLogRow) => void;
 }) {
-  const [stress, setStress] = useState<number | null>(existingLog?.stress_level ?? 1);
-  const [sleep, setSleep] = useState<number | null>(existingLog?.sleep_quality ?? 4);
-  const [exercise, setExercise] = useState(existingLog?.exercise_minutes ?? 2);
-  const [consistency, setConsistency] = useState<number | null>(existingLog?.meal_timing_consistency ?? 5);
+  // Unsaved days start blank (N/A) rather than with placeholder ratings, since a day only saves once
+  // stress, sleep, and routine are all picked -- prefilled values made unsaved days look logged.
+  const [stress, setStress] = useState<number | null>(existingLog?.stress_level ?? null);
+  const [sleep, setSleep] = useState<number | null>(existingLog?.sleep_quality ?? null);
+  const [exercise, setExercise] = useState(existingLog?.exercise_minutes ?? 0);
+  const [consistency, setConsistency] = useState<number | null>(existingLog?.meal_timing_consistency ?? null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
@@ -619,7 +621,7 @@ function RoutineRowCells({
 
   const disabled = avgGlucose == null;
   const incomplete = stress == null || sleep == null || consistency == null;
-  const statusMark = status === 'saving' ? '…' : status === 'saved' ? '✓' : status === 'error' ? '!' : '';
+  const statusMark = status === 'saving' ? '…' : status === 'saved' ? '✓' : status === 'error' ? '!' : existingLog ? '✓' : '';
   const statusClass = status === 'error' ? 'text-rose-600' : 'text-emerald-600';
 
   return (
@@ -791,7 +793,8 @@ function RoutineCorrelationSection({
         ) : (
           <p className="text-sm text-slate-500">
             Log at least {MIN_SAMPLE_SIZE} days above to see a matrix, since you&rsquo;ve logged {reportRoutineLogs.length}{' '}
-            so far within this report&rsquo;s date range.
+            so far within this report&rsquo;s date range. A day counts once its Stress, Sleep, and Routine are all picked (a ✓
+            appears next to it).
           </p>
         ))}
     </div>
