@@ -1,6 +1,11 @@
 import { createClient, type InValue, type ResultSet } from '@libsql/client';
 
 // Turso (hosted libSQL) in production; falls back to the local data.db file for development.
+// Vercel's filesystem can't hold a SQLite file, so fail loudly there instead of falling back.
+if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
+  throw new Error('TURSO_DATABASE_URL is not set for this Vercel deployment. Add it (and TURSO_AUTH_TOKEN) in Project Settings → Environment Variables, then redeploy.');
+}
+
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:data.db',
   authToken: process.env.TURSO_AUTH_TOKEN,
