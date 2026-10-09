@@ -1,15 +1,20 @@
-import { createClient, type InValue, type ResultSet } from '@libsql/client';
+import { createClient, type Client, type InValue, type ResultSet } from '@libsql/client';
 
 // Turso (hosted libSQL) in production; falls back to the local data.db file for development.
-// Vercel's filesystem can't hold a SQLite file, so fail loudly there instead of falling back.
-if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
-  throw new Error('TURSO_DATABASE_URL is not set for this Vercel deployment. Add it (and TURSO_AUTH_TOKEN) in Project Settings → Environment Variables, then redeploy.');
+// Created on first query (not at import) so `next build` never needs database credentials.
+let _client: Client | null = null;
+function getClient(): Client {
+  if (_client) return _client;
+  // Vercel's filesystem can't hold a SQLite file, so fail loudly there instead of falling back.
+  if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
+    throw new Error('TURSO_DATABASE_URL is not set for this Vercel deployment. Add it (and TURSO_AUTH_TOKEN) in Project Settings → Environment Variables, then redeploy.');
+  }
+  _client = createClient({
+    url: process.env.TURSO_DATABASE_URL || 'file:data.db',
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+  return _client;
 }
-
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'file:data.db',
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
@@ -77,13 +82,13 @@ const newUserColumns: Record<string, string> = {
 };
 
 async function migrate() {
-  await client.executeMultiple(SCHEMA);
-  const info = await client.execute('PRAGMA table_info(users)');
+  await getClient().executeMultiple(SCHEMA);
+  const info = await getClient().execute('PRAGMA table_info(users)');
   const existingUserColumns = new Set(info.rows.map((r) => String(r.name)));
   for (const [column, definition] of Object.entries(newUserColumns)) {
     if (!existingUserColumns.has(column)) {
       try {
-        await client.execute(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
+        await getClient().execute(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
       } catch (err) {
         if (!(err instanceof Error) || !/duplicate column name/i.test(err.message)) throw err;
       }
@@ -106,7 +111,7 @@ function toObjects(rs: ResultSet): Record<string, unknown>[] {
 
 async function execute(sql: string, args: InValue[]): Promise<ResultSet> {
   await ensureReady();
-  return client.execute({ sql, args });
+  return getClient().execute({ sql, args });
 }
 
 /** Async stand-in for better-sqlite3's prepare().get/all/run, so call sites only need an `await`. */
