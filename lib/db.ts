@@ -3,15 +3,23 @@ import { createClient, type Client, type InValue, type ResultSet } from '@libsql
 // Turso (hosted libSQL) in production; falls back to the local data.db file for development.
 // Created on first query (not at import) so `next build` never needs database credentials.
 let _client: Client | null = null;
+
+// Values pasted into a dashboard often pick up stray whitespace or surrounding quotes.
+function envValue(name: string): string | undefined {
+  const v = process.env[name]?.trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+  return v || undefined;
+}
+
 function getClient(): Client {
   if (_client) return _client;
+  const url = envValue('TURSO_DATABASE_URL');
   // Vercel's filesystem can't hold a SQLite file, so fail loudly there instead of falling back.
-  if (process.env.VERCEL && !process.env.TURSO_DATABASE_URL) {
+  if (process.env.VERCEL && !url) {
     throw new Error('TURSO_DATABASE_URL is not set for this Vercel deployment. Add it (and TURSO_AUTH_TOKEN) in Project Settings → Environment Variables, then redeploy.');
   }
   _client = createClient({
-    url: process.env.TURSO_DATABASE_URL || 'file:data.db',
-    authToken: process.env.TURSO_AUTH_TOKEN,
+    url: url || 'file:data.db',
+    authToken: envValue('TURSO_AUTH_TOKEN'),
   });
   return _client;
 }
