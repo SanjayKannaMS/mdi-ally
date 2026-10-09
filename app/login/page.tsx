@@ -18,15 +18,23 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
+    let res: Response;
+    try {
+      res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      setError('Could not reach the server. Check your connection and try again.');
+      setLoading(false);
+      return;
+    }
+    // A server crash returns an HTML error page, so don't let a JSON parse failure leave the button stuck.
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
+      setError(data.error ?? `Something went wrong on the server (${res.status}). Please try again.`);
       setLoading(false);
       return;
     }

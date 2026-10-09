@@ -19,15 +19,23 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, fullName }),
-    });
-    const data = await res.json();
+    let res: Response;
+    try {
+      res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, fullName }),
+      });
+    } catch {
+      setError('Could not reach the server. Check your connection and try again.');
+      setLoading(false);
+      return;
+    }
+    // A server crash returns an HTML error page, so don't let a JSON parse failure leave the button stuck.
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setError(data.error ?? 'Something went wrong.');
+      setError(data.error ?? `Something went wrong on the server (${res.status}). Please try again.`);
       setLoading(false);
       return;
     }
