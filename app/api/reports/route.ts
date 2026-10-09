@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No analysis data to save.' }, { status: 400 });
   }
 
-  const info = db
+  const info = await db
     .prepare('INSERT INTO reports (user_id, file_name, analysis, worksheet) VALUES (?, ?, ?, ?)')
     .run(user.id, typeof fileName === 'string' ? fileName : '', JSON.stringify(analysis), JSON.stringify(worksheet ?? null));
 

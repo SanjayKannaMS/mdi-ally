@@ -10,7 +10,7 @@ export default async function ReportsPage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const rows = db
+  const rows = await db
     .prepare('SELECT * FROM reports WHERE user_id = ? ORDER BY created_at DESC')
     .all(user.id) as ReportRow[];
 

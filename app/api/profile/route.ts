@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid profile data.' }, { status: 400 });
   }
 
-  db.prepare(
+  await db.prepare(
     `UPDATE users
      SET full_name = ?, default_target_rise = ?, preferred_intensity = ?, preferred_duration_minutes = ?,
          preferred_setting = ?

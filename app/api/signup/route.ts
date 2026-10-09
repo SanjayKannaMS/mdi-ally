@@ -12,18 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 });
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: number } | undefined;
+  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: number } | undefined;
   if (existing) {
     return NextResponse.json({ error: 'An account with that email already exists.' }, { status: 409 });
   }
 
   const passwordHash = await hashPassword(password);
-  const info = db
+  const info = await db
     .prepare('INSERT INTO users (email, password_hash, full_name) VALUES (?, ?, ?)')
     .run(email, passwordHash, typeof fullName === 'string' ? fullName : '');
   const userId = info.lastInsertRowid as number;
 
-  const token = createSession(userId);
+  const token = await createSession(userId);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

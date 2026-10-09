@@ -260,14 +260,14 @@ function photoPrompt(input: DishPhotoInput): string {
 
 const pendingPhotos = new Map<string, Promise<void>>();
 
-export function getCachedDishPhoto(key: string): { mime: string; data: Buffer } | null {
-  return (db.prepare('SELECT mime, data FROM meal_images WHERE key = ?').get(key) as { mime: string; data: Buffer } | undefined) ?? null;
+export async function getCachedDishPhoto(key: string): Promise<{ mime: string; data: Buffer } | null> {
+  return ((await db.prepare('SELECT mime, data FROM meal_images WHERE key = ?').get(key)) as { mime: string; data: Buffer } | undefined) ?? null;
 }
 
 /** Generates (or reuses a cached) photo for a dish and returns its cache key. */
 export async function ensureDishPhoto(input: DishPhotoInput): Promise<string> {
   const key = dishPhotoKey(input);
-  if (db.prepare('SELECT 1 FROM meal_images WHERE key = ?').get(key)) return key;
+  if (await db.prepare('SELECT 1 FROM meal_images WHERE key = ?').get(key)) return key;
 
   let pending = pendingPhotos.get(key);
   if (!pending) {
@@ -283,7 +283,7 @@ export async function ensureDishPhoto(input: DishPhotoInput): Promise<string> {
       });
       const b64 = body?.data?.[0]?.b64_json;
       if (typeof b64 !== 'string') throw new Error('OpenAI returned no image.');
-      db.prepare('INSERT OR REPLACE INTO meal_images (key, mime, data) VALUES (?, ?, ?)').run(key, 'image/webp', Buffer.from(b64, 'base64'));
+      await db.prepare('INSERT OR REPLACE INTO meal_images (key, mime, data) VALUES (?, ?, ?)').run(key, 'image/webp', Buffer.from(b64, 'base64'));
     })().finally(() => pendingPhotos.delete(key));
     pendingPhotos.set(key, pending);
   }

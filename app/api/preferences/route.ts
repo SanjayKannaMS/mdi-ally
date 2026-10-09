@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid preferences.' }, { status: 400 });
   }
 
-  db.prepare(
+  await db.prepare(
     'UPDATE users SET preferred_intensity = ?, preferred_duration_minutes = ?, preferred_setting = ? WHERE id = ?'
   ).run(intensity, durationMinutes, preferredSetting, user.id);
 

@@ -1,12 +1,12 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { createClient, type InValue, type ResultSet } from '@libsql/client';
 
-const dbPath = path.join(process.cwd(), 'data.db');
-export const db = new Database(dbPath);
+// Turso (hosted libSQL) in production; falls back to the local data.db file for development.
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL || 'file:data.db',
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-db.pragma('journal_mode = WAL');
-
-db.exec(`
+const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
@@ -54,9 +54,8 @@ db.exec(`
     data BLOB NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
-`);
+`;
 
-const existingUserColumns = new Set((db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name));
 const newUserColumns: Record<string, string> = {
   preferred_intensity: 'INTEGER NOT NULL DEFAULT 2',
   preferred_duration_minutes: 'INTEGER NOT NULL DEFAULT 15',
@@ -71,15 +70,57 @@ const newUserColumns: Record<string, string> = {
   meal_cuisines: 'TEXT',
   meal_diet_subtypes: 'TEXT',
 };
-for (const [column, definition] of Object.entries(newUserColumns)) {
-  if (!existingUserColumns.has(column)) {
-    try {
-      db.exec(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
-    } catch (err) {
-      if (!(err instanceof Error) || !/duplicate column name/i.test(err.message)) throw err;
+
+async function migrate() {
+  await client.executeMultiple(SCHEMA);
+  const info = await client.execute('PRAGMA table_info(users)');
+  const existingUserColumns = new Set(info.rows.map((r) => String(r.name)));
+  for (const [column, definition] of Object.entries(newUserColumns)) {
+    if (!existingUserColumns.has(column)) {
+      try {
+        await client.execute(`ALTER TABLE users ADD COLUMN ${column} ${definition}`);
+      } catch (err) {
+        if (!(err instanceof Error) || !/duplicate column name/i.test(err.message)) throw err;
+      }
     }
   }
 }
+
+// Runs once per server instance; reset on failure so the next request retries.
+let ready: Promise<void> | null = null;
+function ensureReady(): Promise<void> {
+  if (!ready) ready = migrate().catch((err) => { ready = null; throw err; });
+  return ready;
+}
+
+function toObjects(rs: ResultSet): Record<string, unknown>[] {
+  return rs.rows.map((row) =>
+    Object.fromEntries(rs.columns.map((col, i) => [col, row[i] instanceof ArrayBuffer ? Buffer.from(row[i] as ArrayBuffer) : row[i]]))
+  );
+}
+
+async function execute(sql: string, args: InValue[]): Promise<ResultSet> {
+  await ensureReady();
+  return client.execute({ sql, args });
+}
+
+/** Async stand-in for better-sqlite3's prepare().get/all/run, so call sites only need an `await`. */
+export const db = {
+  prepare(sql: string) {
+    return {
+      async get(...args: InValue[]): Promise<unknown> {
+        return toObjects(await execute(sql, args))[0];
+      },
+      async all(...args: InValue[]): Promise<unknown[]> {
+        return toObjects(await execute(sql, args));
+      },
+      async run(...args: InValue[]): Promise<{ changes: number; lastInsertRowid: number | undefined }> {
+        const rs = await execute(sql, args);
+        return { changes: rs.rowsAffected, lastInsertRowid: rs.lastInsertRowid != null ? Number(rs.lastInsertRowid) : undefined };
+      },
+    };
+  },
+};
 
 export interface UserRow {
   id: number;

@@ -9,12 +9,12 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as ReportRow | undefined;
+  const report = await db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as ReportRow | undefined;
 
   if (!report || report.user_id !== user.id) {
     return NextResponse.json({ error: 'Report not found.' }, { status: 404 });
   }
 
-  db.prepare('DELETE FROM reports WHERE id = ?').run(id);
+  await db.prepare('DELETE FROM reports WHERE id = ?').run(id);
   return NextResponse.json({ ok: true });
 }

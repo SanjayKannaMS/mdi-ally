@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
   const { key } = await params;
   if (!/^[0-9a-f]{32}$/.test(key)) return new NextResponse('Not found', { status: 404 });
 
-  const photo = getCachedDishPhoto(key);
+  const photo = await getCachedDishPhoto(key);
   if (!photo) return new NextResponse('Not found', { status: 404 });
 
   return new NextResponse(new Uint8Array(photo.data), {

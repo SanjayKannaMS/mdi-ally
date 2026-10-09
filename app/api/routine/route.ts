@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: 'You must be logged in.' }, { status: 401 });
   }
 
-  const logs = db
+  const logs = await db
     .prepare('SELECT * FROM routine_logs WHERE user_id = ? ORDER BY log_date ASC')
     .all(user.id) as RoutineLogRow[];
 
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Average glucose must be a positive number.' }, { status: 400 });
   }
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO routine_logs (user_id, log_date, stress_level, sleep_quality, exercise_minutes, illness, meal_timing_consistency, avg_glucose)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, log_date) DO UPDATE SET
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
        avg_glucose = excluded.avg_glucose`
   ).run(user.id, logDate, stressLevel, sleepQuality, exerciseMinutes, illness ? 1 : 0, mealTimingConsistency, avgGlucose);
 
-  const saved = db
+  const saved = await db
     .prepare('SELECT * FROM routine_logs WHERE user_id = ? AND log_date = ?')
     .get(user.id, logDate) as RoutineLogRow;
 

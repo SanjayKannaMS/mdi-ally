@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Enter your email and password.' }, { status: 400 });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined;
+  const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined;
   if (!user) {
     return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 401 });
   }
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 401 });
   }
 
-  const token = createSession(user.id);
+  const token = await createSession(user.id);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,

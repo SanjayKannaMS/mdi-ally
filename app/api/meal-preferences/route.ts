@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         )
       : {};
 
-  db.prepare(
+  await db.prepare(
     `UPDATE users SET
       meal_target_carbs = ?, meal_target_fiber = ?, meal_target_protein = ?,
       meal_weight_lbs = ?, meal_height_ft = ?, meal_height_in = ?, meal_gender = ?,

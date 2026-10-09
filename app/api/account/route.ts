@@ -8,10 +8,10 @@ export async function DELETE() {
     return NextResponse.json({ error: 'You must be logged in.' }, { status: 401 });
   }
 
-  db.prepare('DELETE FROM reports WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM routine_logs WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
+  await db.prepare('DELETE FROM reports WHERE user_id = ?').run(user.id);
+  await db.prepare('DELETE FROM routine_logs WHERE user_id = ?').run(user.id);
+  await db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
+  await db.prepare('DELETE FROM users WHERE id = ?').run(user.id);
 
   const res = NextResponse.json({ ok: true });
   res.cookies.delete(SESSION_COOKIE);

@@ -10,7 +10,7 @@ export default async function ReportDetailPage({ params }: { params: Promise<{ i
   if (!user) redirect('/login');
 
   const { id } = await params;
-  const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as ReportRow | undefined;
+  const report = await db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as ReportRow | undefined;
   if (!report || report.user_id !== user.id) notFound();
 
   const analysis = JSON.parse(report.analysis) as AnalysisResult;

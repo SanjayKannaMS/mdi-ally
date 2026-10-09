@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
     "lucide-react": "^1.47.0",
     "next": "15.5.25",
     "papaparse": "^5.7.0",
@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "20.14.10",
     "@types/papaparse": "^5.5.2",
     "@types/react": "19.0.1",
@@ -32,8 +31,5 @@
   },
   "overrides": {
     "postcss": "8.5.28"
-  },
-  "allowScripts": {
-    "better-sqlite3@13.0.3": true
   }
 }

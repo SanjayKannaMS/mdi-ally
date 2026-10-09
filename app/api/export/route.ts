@@ -8,8 +8,8 @@ export async function GET() {
     return NextResponse.json({ error: 'You must be logged in.' }, { status: 401 });
   }
 
-  const reports = db.prepare('SELECT * FROM reports WHERE user_id = ? ORDER BY created_at DESC').all(user.id) as ReportRow[];
-  const routineLogs = db
+  const reports = await db.prepare('SELECT * FROM reports WHERE user_id = ? ORDER BY created_at DESC').all(user.id) as ReportRow[];
+  const routineLogs = await db
     .prepare('SELECT * FROM routine_logs WHERE user_id = ? ORDER BY log_date ASC')
     .all(user.id) as RoutineLogRow[];
 

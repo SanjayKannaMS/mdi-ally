@@ -12,7 +12,7 @@ export default async function RoutinePage() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
-  const logs = db
+  const logs = await db
     .prepare('SELECT * FROM routine_logs WHERE user_id = ? ORDER BY log_date ASC')
     .all(user.id) as RoutineLogRow[];
 
